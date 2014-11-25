@@ -32,6 +32,8 @@ namespace vscmd
                 var path = Path.GetFullPath(item);
                 dte.ExecuteCommand("File.OpenFile", "\"" + path + "\"");
             }
+
+            dte.MainWindow.Activate();
         }
     }
 }
