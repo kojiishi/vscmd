@@ -15,25 +15,14 @@ namespace vscmd
         {
             try
             {
-                OpenFiles(args);
+                var vs = VisualStudio.GetOrCreate();
+                foreach (var arg in args)
+                    vs.OpenFile(arg);
             }
             catch (Exception err)
             {
                 Console.Error.WriteLine(err.ToString());
             }
-        }
-
-        static void OpenFiles(string[] files)
-        {
-            dynamic dte = Marshal.GetActiveObject("VisualStudio.DTE.12.0");
-
-            foreach (var item in files)
-            {
-                var path = Path.GetFullPath(item);
-                dte.ExecuteCommand("File.OpenFile", "\"" + path + "\"");
-            }
-
-            dte.MainWindow.Activate();
         }
     }
 }
