@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace vscmd
 {
@@ -15,31 +14,56 @@ namespace vscmd
             this._dte = dte;
         }
 
+        const string ProgID = "VisualStudio.DTE";
         readonly dynamic _dte;
+
+        enum HResult : uint {
+            MK_E_UNAVAILABLE = 0x800401E3, // Operation unavailable
+        }
 
         public static VisualStudio GetOrCreate()
         {
-            const string progID = "VisualStudio.DTE.12.0";
-            dynamic dte;
-            try
+            dynamic dte = GetActiveObjectOrDefault();
+            if (dte != null)
             {
-                dte = Marshal.GetActiveObject(progID);
                 dte.MainWindow.Activate();
+                return new VisualStudio(dte);
             }
-            catch (COMException err)
+
+            var type = Type.GetTypeFromProgID(ProgID);
+            dte = Activator.CreateInstance(type);
+            dte.UserControl = true;
+
+            return new VisualStudio(dte);
+        }
+
+        static object GetActiveObjectOrDefault()
+        {
+            foreach (var progID in GetProgIDs())
             {
-                switch ((uint)err.HResult)
+                try
                 {
-                    case 0x800401E3: // MK_E_UNAVAILABLE: Operation unavailable
-                        var type = Type.GetTypeFromProgID(progID);
-                        dte = Activator.CreateInstance(type);
-                        dte.UserControl = true;
-                        break;
-                    default:
+                    return Marshal.GetActiveObject(progID);
+                }
+                catch (COMException err)
+                {
+                    if ((HResult)err.HResult != HResult.MK_E_UNAVAILABLE)
                         throw;
                 }
             }
-            return new VisualStudio(dte);
+            return null;
+        }
+
+        static IEnumerable<string> GetProgIDs()
+        {
+            yield return ProgID;
+
+            const string prefix = ProgID + ".";
+            var versioned = Registry.ClassesRoot.GetSubKeyNames()
+                .Where(progID => progID.StartsWith(prefix))
+                .OrderByDescending(progID => float.Parse(progID.Substring(prefix.Length)));
+            foreach (var progID in versioned)
+                yield return progID;
         }
 
         public void OpenFile(string path)
