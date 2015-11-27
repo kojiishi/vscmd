@@ -17,7 +17,14 @@ namespace vscmd
             {
                 var vs = VisualStudio.GetOrCreate();
                 foreach (var arg in args)
-                    vs.OpenFile(arg);
+                {
+                    var directoryName = Path.GetDirectoryName(arg);
+                    var dir = new DirectoryInfo(string.IsNullOrEmpty(directoryName) ? Directory.GetCurrentDirectory() : directoryName);
+                    foreach (var file in dir.GetFiles(Path.GetFileName(arg)))
+                    {
+                        vs.OpenFile(file);
+                    }
+                }
             }
             catch (Exception err)
             {

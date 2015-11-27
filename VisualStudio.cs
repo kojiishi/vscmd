@@ -66,10 +66,9 @@ namespace vscmd
                 yield return progID;
         }
 
-        public void OpenFile(string path)
+        public void OpenFile(FileInfo file)
         {
-            path = Path.GetFullPath(path);
-            this._dte.ExecuteCommand("File.OpenFile", "\"" + path + "\"");
+            this._dte.ExecuteCommand("File.OpenFile", "\"" + file.FullName + "\"");
         }
     }
 }
