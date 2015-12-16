@@ -16,6 +16,7 @@ namespace vscmd
             try
             {
                 var vs = VisualStudio.GetOrCreate();
+                bool activate = false;
                 for (var i = 0; i < args.Length; i++)
                 {
                     var arg = args[i];
@@ -29,12 +30,18 @@ namespace vscmd
                     if (arg.Contains('*') || arg.Contains('?'))
                     {
                         foreach (var file in GetFiles(arg))
+                        {
                             vs.OpenFile(file);
+                            activate = true;
+                        }
                         continue;
                     }
 
                     vs.OpenFile(new FileInfo(arg));
+                    activate = true;
                 }
+                if (activate)
+                    vs.ActivateMainWindow();
             }
             catch (Exception err)
             {
@@ -51,13 +58,14 @@ namespace vscmd
 
         static int HandleDebugArguments(VisualStudio vs, string[] args, int i)
         {
+            var project = vs.StartupProject;
             if (i >= args.Length)
             {
-                Console.Out.WriteLine(vs.DebugStartProgram);
-                Console.Out.WriteLine(vs.DebugStartArguments);
+                Console.Out.WriteLine(project.DebugStartProgram);
+                Console.Out.WriteLine(project.DebugStartArguments);
                 return i;
             }
-            vs.DebugStartArguments = args[i];
+            project.DebugStartArguments = args[i];
             return i;
         }
     }
