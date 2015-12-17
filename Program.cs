@@ -6,21 +6,16 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace vscmd
-{
-    class Program
-    {
+namespace vscmd {
+    class Program {
         static VisualStudio vs;
 
         [STAThread]
-        static void Main(string[] args)
-        {
-            try
-            {
+        static void Main(string[] args) {
+            try {
                 vs = VisualStudio.GetOrCreate();
                 bool activate = false;
-                for (var i = 0; i < args.Length; i++)
-                {
+                for (var i = 0; i < args.Length; i++) {
                     var arg = args[i];
                     if ("args".StartsWith(arg)) {
                         HandleDebugArguments(args.Skip(1));
@@ -31,29 +26,22 @@ namespace vscmd
                 }
                 if (activate)
                     vs.ActivateMainWindow();
-            }
-            catch (Exception err)
-            {
+            } catch (Exception err) {
                 Console.Error.WriteLine(err.ToString());
             }
         }
 
-        static FileInfo[] GetFiles(string arg)
-        {
+        static FileInfo[] GetFiles(string arg) {
             var directoryName = Path.GetDirectoryName(arg);
             var dir = new DirectoryInfo(string.IsNullOrEmpty(directoryName) ? Directory.GetCurrentDirectory() : directoryName);
             return dir.GetFiles(Path.GetFileName(arg));
         }
 
-        static bool HandleFileArguments(IEnumerable<string> args)
-        {
+        static bool HandleFileArguments(IEnumerable<string> args) {
             bool handled = false;
-            foreach (var arg in args)
-            {
-                if (arg.Contains('*') || arg.Contains('?'))
-                {
-                    foreach (var file in GetFiles(arg))
-                    {
+            foreach (var arg in args) {
+                if (arg.Contains('*') || arg.Contains('?')) {
+                    foreach (var file in GetFiles(arg)) {
                         vs.OpenFile(file);
                         handled = true;
                     }
@@ -66,12 +54,10 @@ namespace vscmd
             return handled;
         }
 
-        static void HandleDebugArguments(IEnumerable<string> args)
-        {
+        static void HandleDebugArguments(IEnumerable<string> args) {
             var project = vs.StartupProject;
             var config = project.ActiveConfiguration;
-            if (!args.Any())
-            {
+            if (!args.Any()) {
                 Console.Out.WriteLine(config.DebugStartArguments);
                 return;
             }
