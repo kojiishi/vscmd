@@ -10,35 +10,24 @@ namespace vscmd
 {
     class Program
     {
+        static VisualStudio vs;
+
         [STAThread]
         static void Main(string[] args)
         {
             try
             {
-                var vs = VisualStudio.GetOrCreate();
+                vs = VisualStudio.GetOrCreate();
                 bool activate = false;
                 for (var i = 0; i < args.Length; i++)
                 {
                     var arg = args[i];
-
-                    if (arg == "-d")
-                    {
-                        i = HandleDebugArguments(vs, args, i + 1);
-                        continue;
+                    if ("args".StartsWith(arg)) {
+                        HandleDebugArguments(args.Skip(1));
+                    } else {
+                        activate |= HandleFileArguments(args);
                     }
-
-                    if (arg.Contains('*') || arg.Contains('?'))
-                    {
-                        foreach (var file in GetFiles(arg))
-                        {
-                            vs.OpenFile(file);
-                            activate = true;
-                        }
-                        continue;
-                    }
-
-                    vs.OpenFile(new FileInfo(arg));
-                    activate = true;
+                    break;
                 }
                 if (activate)
                     vs.ActivateMainWindow();
@@ -56,20 +45,39 @@ namespace vscmd
             return dir.GetFiles(Path.GetFileName(arg));
         }
 
-        static int HandleDebugArguments(VisualStudio vs, string[] args, int i)
+        static bool HandleFileArguments(IEnumerable<string> args)
+        {
+            bool handled = false;
+            foreach (var arg in args)
+            {
+                if (arg.Contains('*') || arg.Contains('?'))
+                {
+                    foreach (var file in GetFiles(arg))
+                    {
+                        vs.OpenFile(file);
+                        handled = true;
+                    }
+                    continue;
+                }
+
+                vs.OpenFile(new FileInfo(arg));
+                handled = true;
+            }
+            return handled;
+        }
+
+        static void HandleDebugArguments(IEnumerable<string> args)
         {
             var project = vs.StartupProject;
             var config = project.ActiveConfiguration;
-            if (i >= args.Length)
+            if (!args.Any())
             {
-                Console.Out.WriteLine("Project: " + project.Name);
-                Console.Out.WriteLine("Configuration: " + config.Name);
-                Console.Out.WriteLine("Program: " + config.DebugStartProgram);
-                Console.Out.WriteLine("Arguments: " + config.DebugStartArguments);
-                return i;
+                Console.Out.WriteLine(config.DebugStartArguments);
+                return;
             }
-            config.DebugStartArguments = args[i];
-            return i;
+
+            args = args.Select(arg => File.Exists(arg) ? Path.GetFullPath(arg) : arg);
+            config.DebugStartArguments = string.Join(" ", args);
         }
     }
 }
