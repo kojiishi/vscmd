@@ -8,24 +8,13 @@ using System.Runtime.InteropServices;
 
 namespace vscmd
 {
-    public class ComObject
-    {
-        public ComObject(object obj)
-        {
-            this.Object = obj;
-        }
-
-        protected dynamic Object { get; }
-    }
-
     public class VisualStudio : ComObject
     {
         #region Constructors
 
         private VisualStudio(object dte)
             : base(dte)
-        {
-        }
+        { }
 
         const string ProgID = "VisualStudio.DTE";
 
@@ -145,7 +134,7 @@ namespace vscmd
             foreach (var item in this.ProjectObjectsRecursive())
             {
                 if (name == item.Name)
-                    return new Project(item);
+                    return Project.FromObject(item);
             }
             throw new KeyNotFoundException(name);
         }
@@ -159,109 +148,153 @@ namespace vscmd
             get { return this.ProjectByName(this.StartupProjectName); }
         }
 
-        public enum ProjectKind
+        public partial class Project : ComObject
         {
-            Unknown,
-            CPlusPlus,
-            CSharp,
-        }
-
-        public class Project : ComObject
-        {
-            internal Project(object project)
+            protected Project(object project)
                 : base(project)
-            {
-                this.Kind = ParseKind(project);
-            }
+            { }
 
-            public string Name { get { return this.Object.Name; } }
-            public ProjectKind Kind { get; }
-
-            static ProjectKind ParseKind(dynamic project)
+            internal static Project FromObject(dynamic project)
             {
                 switch ((string)project.Kind)
                 {
-                    case "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}": return ProjectKind.CPlusPlus;
-                    case "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}": return ProjectKind.CSharp;
-                    default: return ProjectKind.Unknown;
+                    case "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}":
+                        return new CPlusPlusProject(project);
+                    case "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}":
+                        return new CSharpProject(project);
+                    default:
+                        return new Project(project);
                 }
             }
 
-            NotSupportedException KindNotSupportedException()
+            public string Name { get { return this.Object.Name; } }
+
+            internal NotSupportedException KindNotSupportedException()
             {
                 return new NotSupportedException(string.Format(
-                    "The project type {0} is not supported", this.Kind));
+                    "The operation is not suuported for this project type {0}.", this.Object.Kind));
             }
+        }
 
-            dynamic ActiveConfiguration
+        partial class CPlusPlusProject : Project
+        {
+            internal CPlusPlusProject(object project)
+                : base(project)
+            { }
+        }
+
+        partial class CSharpProject : Project
+        {
+            internal CSharpProject(object project)
+                : base(project)
+            { }
+        }
+
+        #endregion
+
+        #region Configuration
+
+        partial class Project
+        {
+            public Configuration ActiveConfiguration
             {
-                get { return this.Object.ConfigurationManager.ActiveConfiguration; }
+                get { return this.CreateConfiguration(this.Object.ConfigurationManager.ActiveConfiguration); }
             }
 
-            public string DebugStartProgram
+            protected virtual Configuration CreateConfiguration(object configuration)
+            { return new Configuration(configuration, this); }
+        }
+
+        public class Configuration : ComChildObject<Project>
+        {
+            internal Configuration(object configuration, Project parent)
+                : base(configuration, parent)
+            { }
+
+            public Project Project { get { return this.Parent; } }
+            public string Name { get { return this.Object.ConfigurationName; } }
+
+            public virtual string DebugStartArguments
+            {
+                get { throw this.Project.KindNotSupportedException(); }
+                set { throw this.Project.KindNotSupportedException(); }
+            }
+
+            public virtual string DebugStartProgram
+            {
+                get { throw this.Project.KindNotSupportedException(); }
+                set { throw this.Project.KindNotSupportedException(); }
+            }
+        }
+
+        partial class CPlusPlusProject
+        {
+            protected override Configuration CreateConfiguration(object configuration)
+            { return new CPlusPlusConfiguration(configuration, this); }
+        }
+
+        class CPlusPlusConfiguration : Configuration
+        {
+            public CPlusPlusConfiguration(object configuration, Project parent)
+                : base(configuration, parent)
+            { }
+
+            public override string DebugStartArguments
+            {
+                get { return this.PropertyValue<string>("CommandArguments"); }
+                set { this.SetPropertyValue<string>("CommandArguments", value); }
+            }
+
+            public override string DebugStartProgram
+            {
+                get { return this.PropertyValue<string>("Command"); }
+                set { this.SetPropertyValue("Command", value); }
+            }
+        }
+
+        partial class CSharpProject
+        {
+            protected override Configuration CreateConfiguration(object configuration)
+            { return new CSharpConfiguration(configuration, this); }
+        }
+
+        class CSharpConfiguration : Configuration
+        {
+            public CSharpConfiguration(object configuration, Project parent)
+                : base(configuration, parent)
+            { }
+
+            public override string DebugStartArguments
+            {
+                get { return this.PropertyValue<string>("StartArguments"); }
+                set { this.SetPropertyValue<string>("StartArguments", value); }
+            }
+
+            public override string DebugStartProgram
             {
                 get
                 {
-                    var config = this.ActiveConfiguration;
-                    switch (this.Kind)
-                    {
-                        case ProjectKind.CPlusPlus:
-                            return config.Properties.Item("Command").Value;
-                        case ProjectKind.CSharp:
-                            int action = config.Properties.Item("StartAction").Value;
-                            return action == 0 ? null : config.Properties.Item("StartProgram").Value;
-                        default:
-                            throw this.KindNotSupportedException();
-                    }
+                    int action = PropertyValue<int>("StartAction");
+                    return action == 0 ? null : PropertyValue<string>("StartProgram");
                 }
+
                 set
                 {
-                    var config = this.ActiveConfiguration;
-                    switch (this.Kind)
+                    if (string.IsNullOrEmpty(value))
                     {
-                        case ProjectKind.CPlusPlus:
-                            config.Properties.Item("Command").Value = value;
-                            break;
-                        case ProjectKind.CSharp:
-                            if (string.IsNullOrEmpty(value))
-                            {
-                                config.Properties.Item("StartAction").Value = 0;
-                                return;
-                            }
-                            if (File.Exists(value))
-                            {
-                                config.Properties.Item("StartAction").Value = 1;
-                                config.Properties.Item("StartProgram").Value = new FileInfo(value).FullName;
-                                return;
-                            }
-                            config.Properties.Item("StartAction").Value = 1;
-                            config.Properties.Item("StartProgram").Value = value;
-                            break;
-                        default:
-                            throw this.KindNotSupportedException();
+                        SetPropertyValue("StartAction", 0);
+                        return;
                     }
+                    if (File.Exists(value))
+                    {
+                        SetPropertyValue("StartAction", 1);
+                        SetPropertyValue("StartProgram", new FileInfo(value).FullName);
+                        return;
+                    }
+                    SetPropertyValue("StartAction", 1);
+                    SetPropertyValue("StartProgram", value);
                 }
             }
-
-            public string DebugStartArguments
-            {
-                get { return this.ActiveConfiguration.Properties.Item(this.DebugStartArgumentsPropertyName).Value; }
-                set { this.ActiveConfiguration.Properties.Item(this.DebugStartArgumentsPropertyName).Value = value; }
-            }
-
-            string DebugStartArgumentsPropertyName
-            {
-                get
-                {
-                    switch (this.Kind)
-                    {
-                        case ProjectKind.CPlusPlus: return "CommandArguments";
-                        case ProjectKind.CSharp: return "StartArguments";
-                        default: throw this.KindNotSupportedException();
-                    }
-                }
-            }
-
         }
 
         #endregion

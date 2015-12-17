@@ -59,13 +59,16 @@ namespace vscmd
         static int HandleDebugArguments(VisualStudio vs, string[] args, int i)
         {
             var project = vs.StartupProject;
+            var config = project.ActiveConfiguration;
             if (i >= args.Length)
             {
-                Console.Out.WriteLine(project.DebugStartProgram);
-                Console.Out.WriteLine(project.DebugStartArguments);
+                Console.Out.WriteLine("Project: " + project.Name);
+                Console.Out.WriteLine("Configuration: " + config.Name);
+                Console.Out.WriteLine("Program: " + config.DebugStartProgram);
+                Console.Out.WriteLine("Arguments: " + config.DebugStartArguments);
                 return i;
             }
-            project.DebugStartArguments = args[i];
+            config.DebugStartArguments = args[i];
             return i;
         }
     }
