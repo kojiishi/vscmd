@@ -5,17 +5,17 @@ This utility controls Visual Studio from command line.
 
 ## Open Files from Command Line
 
-```
-vscmd path
-```
-This syntax opens the specified files in Visual Studio.
+<pre>vscmd <i>path-to-file</i></pre>
+
+This syntax opens the specified file in Visual Studio.
 
 ## Debug Arguments
 
-```
-vsmcd -d arg
-```
+<pre>vsmcd args <i>arguments</i></pre>
+
 This syntax sets the command line arguments
 when you debug your project.
 
-If you omit `arg`, vscmd displays the current settings.
+* If _arguments_ is omitted, vscmd displays the current settings.
+* File paths are expanded to the full paths.
+* C++ and C# projects are supported.
