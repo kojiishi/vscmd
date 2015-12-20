@@ -19,6 +19,8 @@ namespace vscmd {
                     var arg = args[i];
                     if ("args".StartsWith(arg)) {
                         HandleDebugArguments(args.Skip(1));
+                    } else if ("start".StartsWith(arg)) {
+                        HandleDebugStart(args.Skip(1));
                     } else {
                         activate |= HandleFileArguments(args);
                     }
@@ -54,9 +56,24 @@ namespace vscmd {
             return handled;
         }
 
+        static void HandleDebugStart(IEnumerable<string> args) {
+            var config = vs.StartupProject.ActiveConfiguration;
+            var program = args.FirstOrDefault();
+            if (program == null) {
+                Console.Out.WriteLine(config.DebugStartProgram);
+                Console.Out.WriteLine(config.DebugStartArguments);
+                return;
+            }
+
+            config.DebugStartProgram = Path.GetFullPath(program);
+
+            args = args.Skip(1);
+            if (args.Any())
+                HandleDebugArguments(args);
+        }
+
         static void HandleDebugArguments(IEnumerable<string> args) {
-            var project = vs.StartupProject;
-            var config = project.ActiveConfiguration;
+            var config = vs.StartupProject.ActiveConfiguration;
             if (!args.Any()) {
                 Console.Out.WriteLine(config.DebugStartArguments);
                 return;
