@@ -9,23 +9,19 @@ This utility controls Visual Studio from command line.
 
 This syntax opens the specified file in Visual Studio.
 
-## Debug Start Program
+## Set Start Program to Debug
 
 <pre>vsmcd start <i>path-to-program</i> <i>arguments...</i></pre>
 
-This syntax sets the path of start program of the startup project.
+This syntax sets the start program of the startup project.
 
-* File paths are expanded to the full paths.
+* Paths are expanded to the full paths.
 * If _arguments_ is specified, they are set to the command line arguments.
-  To set the command line arguments without changing the start program,
-  please refer to the `arg` command.
-* If arguments are omitted, vscmd displays the current settings.
 
-## Debug Arguments
+## Set Start Arguments to Debug
 
 <pre>vsmcd arg <i>arguments...</i></pre>
 
 This syntax sets the command line arguments of the startup project.
 
-* File paths are expanded to the full paths.
-* If _arguments_ is omitted, vscmd displays the current settings.
+* Paths are expanded to the full paths.

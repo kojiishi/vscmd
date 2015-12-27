@@ -79,8 +79,15 @@ namespace vscmd {
                 return;
             }
 
-            args = args.Select(arg => File.Exists(arg) ? Path.GetFullPath(arg) : arg);
+            args = args.Select(arg =>
+                QuoteIfNeeded(File.Exists(arg) ? Path.GetFullPath(arg) : arg));
             config.DebugStartArguments = string.Join(" ", args);
+        }
+
+        static string QuoteIfNeeded(string arg) {
+            if (!arg.Contains(' '))
+                return arg;
+            return string.Concat("\"", arg, "\"");
         }
     }
 }
