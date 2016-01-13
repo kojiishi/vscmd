@@ -98,14 +98,16 @@ namespace vscmd {
                 }).ToList();
             var debugger = vs.Debugger;
             if (!filters.Any()) {
-                foreach (var process in debugger.LocalProcesses)
-                    Console.WriteLine($"{process.ProcessID} {process.Name}");
+                var processes = debugger.LocalProcesses
+                    .OrderBy(p => p.Name);
+                foreach (var process in processes)
+                    Console.WriteLine($"{process.ProcessID,5} {process.Name}");
                 return;
             }
             foreach (var process in debugger.LocalProcesses) {
                 if (!filters.Any(f => f(process)))
                     continue;
-                Console.WriteLine($"{process.ProcessID} {process.Name}");
+                Console.WriteLine($"{process.ProcessID,5} {process.Name}");
                 process.Attach();
             }
         }

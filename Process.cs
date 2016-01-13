@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,7 +8,8 @@ using System.Threading.Tasks;
 namespace vscmd {
     partial class Debugger {
         public IEnumerable<Process> LocalProcesses {
-            get { return ((IEnumerable<dynamic>)this.Object.LocalProcesses)
+            get { return ((IEnumerable)this.Object.LocalProcesses)
+                .Cast<dynamic>()
                 .Select(p => new Process(p)); }
         }
     }
