@@ -43,6 +43,8 @@
   <ItemGroup>
     <Compile Include="ComObject.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="Debugger.cs" />
+    <Compile Include="Process.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Project.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

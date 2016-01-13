@@ -19,6 +19,8 @@ namespace vscmd {
                     var arg = args[i];
                     if ("args".StartsWith(arg)) {
                         HandleDebugArguments(args.Skip(1));
+                    } else if ("attach".StartsWith(arg)) {
+                        HandleAttach(args.Skip(1));
                     } else if ("start".StartsWith(arg)) {
                         HandleDebugStart(args.Skip(1));
                     } else {
@@ -82,6 +84,28 @@ namespace vscmd {
             args = args.Select(arg =>
                 QuoteIfNeeded(File.Exists(arg) ? Path.GetFullPath(arg) : arg));
             config.DebugStartArguments = string.Join(" ", args);
+        }
+
+        static void HandleAttach(IEnumerable<string> args) {
+            var filters = args
+                .Select<string, Func<Process, bool>>(s => {
+                    int id;
+                    if (int.TryParse(s, out id))
+                        return p => p.ProcessID == id;
+                    return p => p.Name.Contains(s);
+                }).ToList();
+            var debugger = vs.Debugger;
+            if (!filters.Any()) {
+                foreach (var process in debugger.LocalProcesses)
+                    Console.WriteLine($"{process.ProcessID} {process.Name}");
+                return;
+            }
+            foreach (var process in debugger.LocalProcesses) {
+                if (!filters.Any(f => f(process)))
+                    continue;
+                Console.WriteLine($"{process.ProcessID} {process.Name}");
+                process.Attach();
+            }
         }
 
         static string QuoteIfNeeded(string arg) {
