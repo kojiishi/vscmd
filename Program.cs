@@ -72,6 +72,8 @@ namespace vscmd {
             args = args.Skip(1);
             if (args.Any())
                 HandleDebugArguments(args);
+
+            vs.Debugger.Go(false);
         }
 
         static void HandleDebugArguments(IEnumerable<string> args) {

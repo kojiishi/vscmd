@@ -12,5 +12,9 @@ namespace vscmd {
     public partial class Debugger : ComObject {
         public Debugger(object obj) : base(obj) {
         }
+
+        public void Go(bool WaitForBreakOrEnd = true) {
+            this.Object.Go(WaitForBreakOrEnd);
+        }
     }
 }
