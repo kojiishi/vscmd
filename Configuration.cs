@@ -37,6 +37,7 @@ namespace vscmd {
             protected override Configuration CreateConfiguration(object configuration) { return new CPlusPlusConfiguration(configuration, this); }
         }
 
+        // https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.vcproject.vcprojectconfigurationproperties.aspx
         class CPlusPlusConfiguration : Configuration {
             public CPlusPlusConfiguration(object configuration, Project parent)
                 : base(configuration, parent) { }
