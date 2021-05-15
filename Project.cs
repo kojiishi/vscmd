@@ -64,6 +64,10 @@ namespace vscmd {
 
       public string Name { get { return this.Object.Name; } }
 
+      public dynamic Configuration(string name) {
+        return this.Object.Object.Configurations[name];
+      }
+
       internal NotSupportedException KindNotSupportedException() {
         return new NotSupportedException(string.Format(
             "The operation is not suuported for this project type {0}.", this.Object.Kind));

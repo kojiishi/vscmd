@@ -43,18 +43,23 @@ namespace vscmd {
 
     // https://msdn.microsoft.com/en-us/library/microsoft.visualstudio.vcproject.vcprojectconfigurationproperties.aspx
     class CPlusPlusConfiguration : Configuration {
-      public CPlusPlusConfiguration(object configuration, Project parent)
-          : base(configuration, parent) { }
+      public CPlusPlusConfiguration(object configuration, Project project)
+          : base(configuration, project) {
+        var vcconfig = project.Configuration(this.Name);
+        this._VCDebugSettings = vcconfig.DebugSettings;
+      }
 
       public override string DebugStartArguments {
-        get { return this.PropertyValue<string>("CommandArguments"); }
-        set { this.SetPropertyValue<string>("CommandArguments", value); }
+        get { return this._VCDebugSettings.CommandArguments; }
+        set { this._VCDebugSettings.CommandArguments = value; }
       }
 
       public override string DebugStartProgram {
-        get { return this.PropertyValue<string>("Command"); }
-        set { this.SetPropertyValue("Command", value); }
+        get { return this._VCDebugSettings.Command; }
+        set { this._VCDebugSettings.Command = value; }
       }
+
+      private dynamic _VCDebugSettings;
     }
 
     partial class CSharpProject {
