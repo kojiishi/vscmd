@@ -6,23 +6,25 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace vscmd {
-    partial class Debugger {
-        public IEnumerable<Process> LocalProcesses {
-            get { return ((IEnumerable)this.Object.LocalProcesses)
-                .Cast<dynamic>()
-                .Select(p => new Process(p)); }
-        }
+  partial class Debugger {
+    public IEnumerable<Process> LocalProcesses {
+      get {
+        return ((IEnumerable)this.Object.LocalProcesses)
+      .Cast<dynamic>()
+      .Select(p => new Process(p));
+      }
+    }
+  }
+
+  public class Process : ComObject {
+    public Process(object obj) : base(obj) {
     }
 
-    public class Process : ComObject {
-        public Process(object obj) : base(obj) {
-        }
+    public string Name { get { return this.Object.Name; } }
+    public int ProcessID { get { return this.Object.ProcessID; } }
 
-        public string Name { get { return this.Object.Name; } }
-        public int ProcessID { get { return this.Object.ProcessID; } }
-
-        public void Attach() {
-            this.Object.Attach();
-        }
+    public void Attach() {
+      this.Object.Attach();
     }
+  }
 }
